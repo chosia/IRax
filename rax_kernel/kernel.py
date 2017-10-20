@@ -123,11 +123,12 @@ class RaxKernel(Kernel):
         interrupted = False
         error       = False
         try:
+            code = code.strip()
+            if not code.endswith(';'):
+                code = code + ';'
             self.raxwrapper.sendline(code)
             self.raxwrapper.sendline('`print "RAX$DONE";')
-            i = self.raxwrapper.expect(['RAX\$DONE', 'error:'], timeout=None)
-            if i == 1:
-                error = True
+            i = self.raxwrapper.expect(['RAX\$DONE'], timeout=None)
             output = self.raxwrapper.before
         except KeyboardInterrupt:
             self.raxwrapper.sendintr()
