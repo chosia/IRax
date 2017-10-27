@@ -78,8 +78,9 @@ class RaxKernel(Kernel):
         return "Hi, I'm Rax!"
 
     language_info = {'name': 'rax',
-                     'mimetype': 'text/plain',
-                     'file_extension': '.rax'}
+                     'mimetype': 'text/x-rax',
+                     'file_extension': '.rax',
+                     'pygments_lexer': 'rax'}
 
     def __init__(self, **kwargs):
         Kernel.__init__(self, **kwargs)
@@ -97,7 +98,7 @@ class RaxKernel(Kernel):
             # source code there for comments and context for
             # understanding the code here.
             self.raxwrapper = pexpect.spawn("/Users/chosia/codersco/RaxCore/start_rax",
-                                            ['-s', '-B'], echo=False,
+                                            ['-s', '-B', '-D', 'IDE:=1'], echo=False,
 #                                            encoding='utf-8',
                                             codec_errors='replace')
             self.raxwrapper.logfile = sys.stdout
@@ -108,8 +109,14 @@ class RaxKernel(Kernel):
         if not self.silent:
             # Send standard output
             stream_content = {'name': 'stdout', 'text': output}
-            self.send_response(self.iopub_socket, 'stream', stream_content)
-
+            display_data_content = {
+                'data': {
+                    'text/markdown' : output
+                },
+                'metadata': {}
+            }
+#           self.send_response(self.iopub_socket, 'stream', stream_content)
+            self.send_response(self.iopub_socket, 'display_data', display_data_content)
 
     def do_execute(self, code, silent, store_history=True,
                    user_expressions=None, allow_stdin=False):

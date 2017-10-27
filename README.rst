@@ -4,7 +4,7 @@ This requires IPython 3.
 
 To install::
 
-    pip install rax_kernel
+    pip install . --upgrade
     python -m rax_kernel.install
 
 To use it, run one of:
