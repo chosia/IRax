@@ -5,6 +5,7 @@ import pexpect
 from subprocess import check_output
 import os.path
 import sys
+from pathlib2 import Path
 
 import re
 import signal
@@ -115,6 +116,9 @@ class RaxKernel(Kernel):
                 },
                 'metadata': {}
             }
+            if os.path.isfile('RAX$PLOT.html'):
+                plot_file = open('RAX$PLOT.html', 'r')                
+                display_data_content['data']['text/html'] = plot_file.read()
 #           self.send_response(self.iopub_socket, 'stream', stream_content)
             self.send_response(self.iopub_socket, 'display_data', display_data_content)
 
