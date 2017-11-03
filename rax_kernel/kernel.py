@@ -111,6 +111,7 @@ class RaxKernel(Kernel):
                                             ['-s', '-B', '-D', 'IDE:=1'], echo=False,
 #                                            encoding='utf-8',
                                             codec_errors='replace')
+            self.raxwrapper.sendline('''%include __EXE_PATH__ "/rx_GraphicalEngine/SimpleCharts.rax";''')
             self.raxwrapper.logfile = sys.stdout
         finally:
             signal.signal(signal.SIGINT, sig)
@@ -125,12 +126,34 @@ class RaxKernel(Kernel):
                 },
                 'metadata': {}
             }
+            self.logger.debug('Sending display data: {0}'.format(display_data_content))
+            self.send_response(self.iopub_socket, 'display_data', display_data_content)
             if os.path.isfile('RAX$PLOT.html'):
                 plot_file = open('RAX$PLOT.html', 'r')
-                display_data_content['data']['text/html'] = plot_file.read()
-            self.logger.debug('Sending display data: {0}'.format(display_data_content))
+                file_content = plot_file.read()
+                plot_file.close()
+                display_data_content = {
+                    'data': {
+                        'text/html' : file_content
+                    },
+                    'metadata': {}
+                }
+                self.logger.debug('Sending display data: {0}'.format(display_data_content))
+                self.send_response(self.iopub_socket, 'display_data', display_data_content)
+            if os.path.isfile('RAX$PLOT.svg'):
+                plot_file = open('RAX$PLOT.svg', 'r')
+                file_content = plot_file.read()
+                plot_file.close()
+                display_data_content = {
+                    'data': {
+                        'text/svg' : file_content
+                    },
+                    'metadata': {}
+                }
+                self.logger.debug('Sending display data: {0}'.format(display_data_content))
+                self.send_response(self.iopub_socket, 'display_data', display_data_content)
 #           self.send_response(self.iopub_socket, 'stream', stream_content)
-            self.send_response(self.iopub_socket, 'display_data', display_data_content)
+
 
     def do_execute(self, code, silent, store_history=True,
                    user_expressions=None, allow_stdin=False):
