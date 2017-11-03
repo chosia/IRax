@@ -9,6 +9,7 @@ from pathlib2 import Path
 
 import re
 import signal
+import logging
 
 __version__ = '0.1.1'
 
@@ -85,6 +86,14 @@ class RaxKernel(Kernel):
 
     def __init__(self, **kwargs):
         Kernel.__init__(self, **kwargs)
+        logger = logging.getLogger('rax_kernel')
+        fh = logging.FileHandler('rax_kernel.log')
+        fmt = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        fh.setFormatter(fmt)
+        logger.addHandler(fh)
+        logger.setLevel(logging.DEBUG)
+        self.logger = logger
+        self.logger.debug('Starting Rax kernel')
         self._start_rax()
 
     def _start_rax(self):
@@ -117,14 +126,15 @@ class RaxKernel(Kernel):
                 'metadata': {}
             }
             if os.path.isfile('RAX$PLOT.html'):
-                plot_file = open('RAX$PLOT.html', 'r')                
+                plot_file = open('RAX$PLOT.html', 'r')
                 display_data_content['data']['text/html'] = plot_file.read()
+            self.logger.debug('Sending display data: {0}'.format(display_data_content))
 #           self.send_response(self.iopub_socket, 'stream', stream_content)
             self.send_response(self.iopub_socket, 'display_data', display_data_content)
 
     def do_execute(self, code, silent, store_history=True,
                    user_expressions=None, allow_stdin=False):
-        print "Entering do_execute"
+        self.logger.debug('Starting do_execute')
         self.silent = silent
         # Handle empty requests (frontend might use them to query the execution_count)
         if not code.strip():
