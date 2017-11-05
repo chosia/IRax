@@ -2,10 +2,9 @@ A Jupyter kernel for Rax
 
 This requires IPython 3.
 
-To install::
+To install, clone the repository to your local machine, cd to IRax and run::
 
-    pip install . --upgrade
-    python -m rax_kernel.install
+    ./install.sh
 
 To use it, run one of:
 
