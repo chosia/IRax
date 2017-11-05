@@ -2,14 +2,16 @@ import json
 import os
 import sys
 import argparse
+import shutil
 
 from jupyter_client.kernelspec import KernelSpecManager
 from IPython.utils.tempdir import TemporaryDirectory
+import notebook
 
 kernel_json = {"argv":[sys.executable,"-m","rax_kernel", "-f", "{connection_file}"],
  "display_name":"Rax",
  "language":"rax",
- "codemirror_mode":"shell"
+ "codemirror_mode":"rax"
 }
 
 def install_my_kernel_spec(user=True, prefix=None):
@@ -19,8 +21,17 @@ def install_my_kernel_spec(user=True, prefix=None):
             json.dump(kernel_json, f, sort_keys=True)
         # TODO: Copy resources once they're specified
 
-        print('Installing IPython kernel spec')
+        print('Installing IPython kernel spec for Rax')
         KernelSpecManager().install_kernel_spec(td, 'rax', user=user, replace=True, prefix=prefix)
+
+#        modesrcpath = os.path.join("..", *["codemirror_rax", "rax.js"])
+#        modedstpath = os.path.join(notebook.__file__,
+#                                   *["static", "components", "codemirror", "mode", "rax"])
+#        print('Installing codemirror rax mode')
+#        if not os.path.exists(modedstpath):
+#            os.makedirs(modedstpath)
+#        shutil.copy2(modesrcpath, modedstpath)
+        
 
 def _is_root():
     try:
