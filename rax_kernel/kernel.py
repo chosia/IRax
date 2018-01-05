@@ -107,7 +107,7 @@ class RaxKernel(Kernel):
             # bash() function of pexpect/replwrap.py.  Look at the
             # source code there for comments and context for
             # understanding the code here.
-            self.raxwrapper = pexpect.spawn("/Users/chosia/codersco/RaxCore/start_rax",
+            self.raxwrapper = pexpect.spawn("/home/boss/RaxCore/start_rax",
                                             ['-s', '-B', '-D', 'IDE:=1'], echo=False,
 #                                            encoding='utf-8',
                                             codec_errors='replace')
@@ -119,10 +119,11 @@ class RaxKernel(Kernel):
     def process_output(self, output):
         if not self.silent:
             # Send standard output
-            stream_content = {'name': 'stdout', 'text': output}
+            decoded_output = output.decode('utf-8')
+            stream_content = {'name': 'stdout', 'text': decoded_output}
             display_data_content = {
                 'data': {
-                    'text/markdown' : output
+                    'text/markdown' : decoded_output
                 },
                 'metadata': {}
             }
