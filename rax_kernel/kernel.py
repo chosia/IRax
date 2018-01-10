@@ -3,7 +3,7 @@ from pexpect import replwrap, EOF
 import pexpect
 
 from subprocess import check_output
-import os.path
+import os
 import sys
 from pathlib2 import Path
 
@@ -103,11 +103,19 @@ class RaxKernel(Kernel):
         # so that bash and its children are interruptible.
         sig = signal.signal(signal.SIGINT, signal.SIG_DFL)
         try:
+            # Get Rax path
+            rax_path = os.environ['RAX_PATH']
+        except KeyError:
+            self.logger.error('RAX_PATH variable not defined, using /opt/RaxCore')
+            rax_path = "/opt/RaxCore"
+        try:
+            start_rax_path = os.path.join(rax_path, "start_rax")
+            
             # Note: the next few lines mirror functionality in the
             # bash() function of pexpect/replwrap.py.  Look at the
             # source code there for comments and context for
             # understanding the code here.
-            self.raxwrapper = pexpect.spawn("/home/boss/RaxCore/start_rax",
+            self.raxwrapper = pexpect.spawn(start_rax_path,
                                             ['-s', '-B', '-D', 'IDE:=1'], echo=False,
 #                                            encoding='utf-8',
                                             codec_errors='replace')
