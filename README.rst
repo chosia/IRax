@@ -2,7 +2,11 @@ A Jupyter kernel for Rax
 
 This requires IPython 3.
 
-To install, clone the repository to your local machine, cd to IRax and run::
+To install, clone the repository to your local machine, with the '--recursive' flag:
+
+   git clone --recursive https://github.com/chosia/IRax
+
+cd to IRax and run::
 
     ./install.sh
 

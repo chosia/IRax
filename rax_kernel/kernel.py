@@ -10,6 +10,7 @@ from pathlib2 import Path
 import re
 import signal
 import logging
+import time
 
 __version__ = '0.1.1'
 
@@ -84,6 +85,8 @@ class RaxKernel(Kernel):
                      'file_extension': '.rax',
                      'pygments_lexer': 'rax'}
 
+    rax_running = False
+
     def __init__(self, **kwargs):
         Kernel.__init__(self, **kwargs)
         logger = logging.getLogger('rax_kernel')
@@ -93,10 +96,10 @@ class RaxKernel(Kernel):
         logger.addHandler(fh)
         logger.setLevel(logging.DEBUG)
         self.logger = logger
-        self.logger.debug('Starting Rax kernel')
-        self._start_rax()
+        self.rax_running = False
 
-    def _start_rax(self):
+    def _start_rax(self, dburl = None):
+        self.logger.debug("Starting Rax kernel")
         # Signal handlers are inherited by forked processes, and we can't easily
         # reset it from the subprocess. Since kernelapp ignores SIGINT except in
         # message handlers, we need to temporarily reset the SIGINT handler here
@@ -107,14 +110,35 @@ class RaxKernel(Kernel):
             # bash() function of pexpect/replwrap.py.  Look at the
             # source code there for comments and context for
             # understanding the code here.
+            if dburl:
+                params = ['-s', '-u', dburl, '-D', 'IDE:=1']
+            else:
+                params = ['-s', '-B', '-D', 'IDE:=1']
             self.raxwrapper = pexpect.spawn("/Users/chosia/codersco/RaxCore/start_rax",
-                                            ['-s', '-B', '-D', 'IDE:=1'], echo=False,
+                                            params, echo=False,
 #                                            encoding='utf-8',
                                             codec_errors='replace')
+            fout = file('child.log', 'w')
+            self.raxwrapper.logfile = fout
+
             self.raxwrapper.sendline('''%include __EXE_PATH__ "/rx_GraphicalEngine/SimpleCharts.rax";''')
-            self.raxwrapper.logfile = sys.stdout
+            self.raxwrapper.sendline('''`print "Rax$ready";''')
+            idx = self.raxwrapper.expect([pexpect.EOF, "Rax\$ready"])
+            if idx == 0:
+                #We're unable to start Rax
+                out = self.raxwrapper.before
+                self.logger.error("Unable to start Rax")
+                self.logger.debug("Rax output: {0}".format(out))
+                self.process_output(out)
+            else:
+                self.rax_running = True
+
         finally:
             signal.signal(signal.SIGINT, sig)
+
+    def _stop_rax(self):
+        self.raxwrapper.sendeof()
+        self.rax_running = False
 
     def process_output(self, output):
         if not self.silent:
@@ -170,19 +194,30 @@ class RaxKernel(Kernel):
             code = code.strip()
             if not code.endswith(';'):
                 code = code + ';'
-            self.raxwrapper.sendline(code)
-            self.raxwrapper.sendline('`print "RAX$DONE";')
-            i = self.raxwrapper.expect(['RAX\$DONE'], timeout=None)
-            output = self.raxwrapper.before
+            # Test for special %dburl line
+            m = re.match(r"^%dburl\s+\"([^\"]+)\";$", code)
+            if m:
+                self.logger.debug("Found %dburl line")
+                dburl = m.group(1)
+                self.process_output("Restarting Rax with dburl: {0}".format(dburl))
+                if self.rax_running:
+                    self._stop_rax()
+                self._start_rax(dburl=str(dburl))
+            else:
+                self.logger.debug("Found Rax code")
+                if not self.rax_running:
+                    self._start_rax()
+                self.raxwrapper.sendline(code)
+                self.raxwrapper.sendline('`print "RAX$DONE";')
+                i = self.raxwrapper.expect(['RAX\$DONE'], timeout=None)
+                self.process_output(self.raxwrapper.before)
         except KeyboardInterrupt:
             self.raxwrapper.sendintr()
             interrupted = True
-            output = self.raxwrapper.before
+            self.process_output(self.raxwrapper.before)
         except EOF:
-            output = self.raxwrapper.before + 'Restarting Rax'
+            self.process_output(self.raxwrapper.before + 'Restarting Rax')
             self._start_rax()
-
-        self.process_output(output)
 
         if interrupted:
             return {'status': 'abort', 'execution_count': self.execution_count}
