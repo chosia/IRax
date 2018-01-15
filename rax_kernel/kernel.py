@@ -3,7 +3,7 @@ from pexpect import replwrap, EOF
 import pexpect
 
 from subprocess import check_output
-import os.path
+import os
 import sys
 from pathlib2 import Path
 
@@ -106,16 +106,29 @@ class RaxKernel(Kernel):
         # so that bash and its children are interruptible.
         sig = signal.signal(signal.SIGINT, signal.SIG_DFL)
         try:
+            # Get Rax path
+            rax_path = os.environ['RAX_PATH']
+        except KeyError:
+            self.logger.error('RAX_PATH variable not defined, using /opt/RaxCore')
+            rax_path = "/opt/RaxCore"
+        try:
+            start_rax_path = os.path.join(rax_path, "start_rax")
+            
             # Note: the next few lines mirror functionality in the
             # bash() function of pexpect/replwrap.py.  Look at the
             # source code there for comments and context for
             # understanding the code here.
+<<<<<<< HEAD
             if dburl:
                 params = ['-s', '-u', dburl, '-D', 'IDE:=1']
             else:
                 params = ['-s', '-B', '-D', 'IDE:=1']
             self.raxwrapper = pexpect.spawn("/Users/chosia/codersco/RaxCore/start_rax",
                                             params, echo=False,
+=======
+            self.raxwrapper = pexpect.spawn(start_rax_path,
+                                            ['-s', '-B', '-D', 'IDE:=1'], echo=False,
+>>>>>>> 3869c57ba8d8a2745c1e97b98ac2a768148bbcc3
 #                                            encoding='utf-8',
                                             codec_errors='replace')
             fout = file('child.log', 'w')
@@ -143,10 +156,11 @@ class RaxKernel(Kernel):
     def process_output(self, output):
         if not self.silent:
             # Send standard output
-            stream_content = {'name': 'stdout', 'text': output}
+            decoded_output = output.decode('utf-8')
+            stream_content = {'name': 'stdout', 'text': decoded_output}
             display_data_content = {
                 'data': {
-                    'text/markdown' : output
+                    'text/markdown' : decoded_output
                 },
                 'metadata': {}
             }

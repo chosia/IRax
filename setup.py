@@ -8,4 +8,5 @@ setup(name='rax_kernel',
       author_email='info@codersco.com',
       license='MIT',
       packages=['rax_kernel'],
+      install_requires=['pathlib2'],
       zip_safe=False)
