@@ -111,17 +111,14 @@ class RaxKernel(Kernel):
         except KeyError:
             self.logger.error('RAX_PATH variable not defined, using /opt/RaxCore')
             rax_path = "/opt/RaxCore"
-        self.logger.debug("Really starting Rax")
         try:
             start_rax_path = os.path.join(rax_path, "start_rax")
-            self.logger.debug("Rax path is" + rax_path)
+            self.logger.debug("Rax path is " + rax_path)
 
-            self.logger.debug("Setting rax params")
             if dburl is None:
                 dburl = 'postgres+odbc://DSN=PostgreSQL;SERVER=localhost;PORT=5432;UID=rax;PASSWORD=rax;DATABASE=rax'
             params = ['-s', '-u', dburl, '-D', 'IDE:=1']
 
-            self.logger.debug("Starting Rax with params")
             self.raxwrapper = pexpect.spawn(start_rax_path,
                                             params, echo=False,
 #                                            encoding='utf-8',
@@ -129,7 +126,6 @@ class RaxKernel(Kernel):
             self.logger.debug("Rax started")
             fout = open('child.log', 'wb')
             self.raxwrapper.logfile = fout
-            self.logger.debug("Created child log file")
             self.logger.debug("sending include line")
             self.raxwrapper.sendline('''%include __EXE_PATH__ "/rx_GraphicalEngine/SimpleCharts.rax";''')
             self.logger.debug("sending raxready line")
