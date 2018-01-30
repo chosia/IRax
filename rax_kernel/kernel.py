@@ -111,29 +111,32 @@ class RaxKernel(Kernel):
         except KeyError:
             self.logger.error('RAX_PATH variable not defined, using /opt/RaxCore')
             rax_path = "/opt/RaxCore"
+        self.logger.debug("Really starting Rax")
         try:
             start_rax_path = os.path.join(rax_path, "start_rax")
+            self.logger.debug("Rax path is" + rax_path)
 
-            # Note: the next few lines mirror functionality in the
-            # bash() function of pexpect/replwrap.py.  Look at the
-            # source code there for comments and context for
-            # understanding the code here.
-            if dburl:
-                params = ['-s', '-u', dburl, '-D', 'IDE:=1']
-            else:
-                params = ['-s', '-c',
-                          'DSN=PostgreSQL;SERVER=localhost;PORT=5432;UID=rax;PASSWORD=rax;DATABASE=rax',
-                          '-D', 'IDE:=1']
+            self.logger.debug("Setting rax params")
+            if dburl is None:
+                dburl = 'postgres+odbc://DSN=PostgreSQL;SERVER=localhost;PORT=5432;UID=rax;PASSWORD=rax;DATABASE=rax'
+            params = ['-s', '-u', dburl, '-D', 'IDE:=1']
+
+            self.logger.debug("Starting Rax with params")
             self.raxwrapper = pexpect.spawn(start_rax_path,
                                             params, echo=False,
 #                                            encoding='utf-8',
                                             codec_errors='replace')
-            fout = open('child.log', 'w')
+            self.logger.debug("Rax started")
+            fout = open('child.log', 'wb')
             self.raxwrapper.logfile = fout
-
+            self.logger.debug("Created child log file")
+            self.logger.debug("sending include line")
             self.raxwrapper.sendline('''%include __EXE_PATH__ "/rx_GraphicalEngine/SimpleCharts.rax";''')
+            self.logger.debug("sending raxready line")
             self.raxwrapper.sendline('''`print "Rax$ready";''')
+            self.logger.debug("waiting for raxready line")
             idx = self.raxwrapper.expect([pexpect.EOF, "Rax\$ready"])
+            self.logger.debug("got raxready line")
             if idx == 0:
                 #We're unable to start Rax
                 out = self.raxwrapper.before
@@ -218,8 +221,10 @@ class RaxKernel(Kernel):
                 self.logger.debug("Found Rax code")
                 if not self.rax_running:
                     self._start_rax()
+                self.logger.debug("Sending Rax code")
                 self.raxwrapper.sendline(code)
                 self.raxwrapper.sendline('`print "RAX$DONE";')
+                self.logger.debug("Waiting for 'raxdone'")
                 i = self.raxwrapper.expect(['RAX\$DONE'], timeout=None)
                 self.process_output(self.raxwrapper.before)
         except KeyboardInterrupt:
