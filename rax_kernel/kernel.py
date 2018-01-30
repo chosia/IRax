@@ -121,12 +121,14 @@ class RaxKernel(Kernel):
             if dburl:
                 params = ['-s', '-u', dburl, '-D', 'IDE:=1']
             else:
-                params = ['-s', '-B', '-D', 'IDE:=1']
+                params = ['-s', '-c',
+                          'DSN=PostgreSQL;SERVER=localhost;PORT=5432;UID=rax;PASSWORD=rax;DATABASE=rax',
+                          '-D', 'IDE:=1']
             self.raxwrapper = pexpect.spawn(start_rax_path,
                                             params, echo=False,
 #                                            encoding='utf-8',
                                             codec_errors='replace')
-            fout = file('child.log', 'w')
+            fout = open('child.log', 'w')
             self.raxwrapper.logfile = fout
 
             self.raxwrapper.sendline('''%include __EXE_PATH__ "/rx_GraphicalEngine/SimpleCharts.rax";''')
